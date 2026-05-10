@@ -40,7 +40,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           <p className="text-sm text-gray-500">Welcome back. Here&apos;s what&apos;s happening.</p>
         </div>
-        <Button onClick={() => navigate('/app/dashboard')}>
+        <Button onClick={() => navigate('/app/board/b-1')}>
           <Plus className="w-4 h-4 mr-2" /> New Project
         </Button>
       </div>

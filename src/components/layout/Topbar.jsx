@@ -95,7 +95,7 @@ export default function Topbar() {
                     onSelect={() => {
                       setSearchOpen(false);
                       setSearchQuery('');
-                      navigate('/app/board');
+                      navigate('/app/board/b-1');
                     }}
                     className="px-2 py-2 text-sm text-gray-900 dark:text-white rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-between"
                   >
@@ -115,7 +115,7 @@ export default function Topbar() {
                   Go to Dashboard
                 </Command.Item>
                 <Command.Item 
-                  onSelect={() => { setSearchOpen(false); navigate('/app/board'); }}
+                  onSelect={() => { setSearchOpen(false); navigate('/app/board/b-1'); }}
                   className="px-2 py-2 text-sm text-gray-900 dark:text-white rounded-md cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   Go to Kanban Board
