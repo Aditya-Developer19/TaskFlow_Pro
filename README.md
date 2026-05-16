@@ -2,19 +2,20 @@
   <div style="background-color: #6366f1; width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
   </div>
-  
+
   <h1 align="center">TaskFlow Pro</h1>
 
   <p align="center">
-    A production-grade, collaborative project management & productivity SaaS application.
+    A full-stack, real-time collaborative project management & productivity SaaS application.
     <br />
-    Built to demonstrate advanced frontend architecture, state management, and modern UI/UX principles.
+    Built on the <strong>MERN stack</strong> — MongoDB · Express · React · Node.js — with Socket.io, JWT auth, and a zero-Firebase local backend.
   </p>
 
   <p align="center">
     <a href="#features">Features</a> •
     <a href="#tech-stack">Tech Stack</a> •
     <a href="#architecture">Architecture</a> •
+    <a href="#api-reference">API Reference</a> •
     <a href="#getting-started">Getting Started</a>
   </p>
 </div>
@@ -23,95 +24,247 @@
 
 ## 🌟 Overview
 
-**TaskFlow Pro** is designed to merge the best of project management (Kanban) with personal productivity (Focus tracking). Inspired by industry leaders like Linear and Notion, the application features a blazing-fast, keyboard-centric interface with seamless drag-and-drop capabilities, real-time focus timers, and dynamic analytics. 
+**TaskFlow Pro** started as a frontend-only React app. It has been fully migrated into a **production-grade MERN monorepo** running entirely on localhost — no Firebase, no third-party auth, no external database.
 
-This project was built from the ground up to showcase mastery over the modern **React ecosystem**, highlighting complex state management, performance optimization, and premium aesthetic design.
+The backend is a custom **Express + MongoDB** server featuring:
+- **JWT authentication** (access + refresh token rotation)
+- **Real-time collaboration** via Socket.io (tasks sync live across browser tabs)
+- **REST API** with 16+ endpoints covering auth, projects, tasks, users, file uploads, activity feeds, and analytics
+- **MongoDB aggregation pipelines** powering the analytics dashboard
+
+The frontend is a blazing-fast **Vite + React 18** app with Redux Toolkit, @dnd-kit drag-and-drop, Framer Motion animations, and a full command palette — all now wired to the real backend instead of seed data.
 
 ---
 
 ## 🚀 Key Features
 
-* **Advanced Kanban Board**: Full drag-and-drop task management built with `@dnd-kit`. Supports optimistic UI updates, multi-column sorting, and complex task metadata (priorities, labels, due dates).
-* **Global Command Palette**: Hit `Cmd+K` (or `Ctrl+K`) anywhere in the app to instantly search through tasks or navigate between boards and dashboards.
-* **Integrated Pomodoro Workspace**: A dedicated focus timer that runs in a global Redux state. Start your timer, navigate to other pages, and your focus session will continue ticking and automatically log upon completion.
-* **Productivity Analytics**: A comprehensive dashboard featuring a dynamic calendar heatmap, streak tracking, and accumulated focus time metrics.
-* **Theming**: Fully responsive Dark/Light mode switching built natively with Tailwind CSS.
+### 🔐 Authentication
+- Secure **JWT-based auth** with 15-minute access tokens and 7-day refresh tokens
+- Refresh tokens stored in **httpOnly cookies** (XSS-safe)
+- **Silent token refresh** — axios interceptor transparently re-authenticates on 401
+- Auto-creates a default **Workspace** on registration
+
+### 🗂 Project & Task Management
+- **Full CRUD** for projects and tasks via REST API, persisted to MongoDB
+- **Kanban board** with 4 default columns: To Do → In Progress → In Review → Done
+- **Optimistic UI** — drag-and-drop updates the UI instantly, then syncs to the server in the background
+- Task metadata: priority levels, due dates, tags, assignees, and file attachments
+
+### ⚡ Real-Time Collaboration (Socket.io)
+- Socket.io server with **JWT auth handshake** — unauthenticated sockets are rejected
+- Users **join project rooms** and receive live events when any collaborator mutates a task
+- Events: `task:created`, `task:moved`, `task:updated`, `task:deleted`
+- Redux reducers (`socketTask*`) handle incoming events — no page refresh needed
+
+### 📁 File Uploads
+- **Multer-powered** file upload endpoint for task attachments
+- Supports `.jpg`, `.jpeg`, `.png`, `.pdf`, `.docx`, `.xlsx` — up to **10 MB**
+- Files served as static assets at `http://localhost:5000/uploads/`
+
+### 📊 Analytics API
+- MongoDB **aggregation pipelines** compute:
+  - Tasks per column (pipeline stage distribution)
+  - Tasks per priority
+  - Tasks per assignee (with user lookup)
+  - Activity counts over the last 7 days (daily time series)
+  - Completion rate percentage
+- Recharts dashboard consumes live data from the API
+
+### 📋 Activity Feed
+- Every task mutation (create / move / update) writes an `ActivityLog` document
+- `/api/tasks/activity/:projectId` returns the last 50 logs, populated with user names and task titles
+- Powers the sidebar "Recent Activity" feed
+
+### ⏱ Focus / Pomodoro Workspace
+- Integrated Pomodoro timer running in global Redux state — persists across page navigation
+- Session logging, streak tracking, and calendar heatmap analytics
+
+### 🎨 UI / UX
+- **Dark / Light mode** toggle with system preference detection
+- Global **Command Palette** (`Ctrl+K` / `Cmd+K`) — instant search and navigation
+- **Framer Motion** micro-animations throughout
+- Fully responsive layout
 
 ---
 
-## 🛠 Tech Stack & Tooling
+## 🛠 Tech Stack
 
-Every tool was carefully selected to represent enterprise-level standards.
+### Backend (`server/`)
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Node.js 18+ |
+| Framework | Express 4 |
+| Database | MongoDB 7 + Mongoose 8 |
+| Authentication | JSON Web Tokens (`jsonwebtoken`) + `bcryptjs` |
+| Real-Time | Socket.io 4 |
+| File Uploads | Multer |
+| Security | Helmet, CORS, express-rate-limit |
+| Logging | Morgan |
+| Validation | Zod |
+| Dev Server | Nodemon |
 
-### Core Architecture
-* **[React 18](https://react.dev/)**: Utilized functional components, custom hooks, and concurrent features.
-* **[Vite](https://vitejs.dev/)**: Chosen over Create React App for blazing-fast HMR and optimized production bundling.
-* **[Redux Toolkit (RTK)](https://redux-toolkit.js.org/)**: Manages complex global state (Kanban data, Focus sessions) eliminating prop-drilling. Uses normalized state shapes for optimal performance.
-* **[React Router v6](https://reactrouter.com/)**: Handles nested routing, layout wrappers, and protected route logic.
-
-### UI & Styling
-* **[Tailwind CSS v3](https://tailwindcss.com/)**: Utility-first CSS for rapid, maintainable styling. Configured with custom design tokens (brand colors, typography).
-* **[Framer Motion](https://www.framer.com/motion/)**: Powers the fluid micro-interactions and layout transitions across the app.
-* **[Lucide React](https://lucide.dev/)**: Beautiful, consistent open-source iconography.
-* **[clsx](https://github.com/lukeed/clsx) & [tailwind-merge](https://github.com/dcastil/tailwind-merge)**: Utility combination for elegant, conflict-free dynamic class name generation.
-
-### Forms & Interactions
-* **[@dnd-kit](https://dndkit.com/)**: A lightweight, performant, and accessible drag-and-drop toolkit used for the Kanban board.
-* **[React Hook Form](https://react-hook-form.com/)**: High-performance, flexible, and extensible form management.
-* **[Zod](https://zod.dev/)**: TypeScript-first schema validation applied to forms (e.g., Task creation/editing) to ensure data integrity before dispatching to Redux.
-* **[CMDK](https://cmdk.paco.me/)**: A fast, accessible command menu interface for global search.
+### Frontend (`src/`)
+| Layer | Technology |
+|-------|-----------|
+| Framework | React 18 + Vite 5 |
+| State | Redux Toolkit (RTK) |
+| Routing | React Router v6 |
+| HTTP Client | Axios (custom instance with interceptors) |
+| WebSocket | socket.io-client |
+| Drag & Drop | @dnd-kit/core + @dnd-kit/sortable |
+| Animations | Framer Motion |
+| Forms | React Hook Form + Zod |
+| Styling | Tailwind CSS v3 |
+| Icons | Lucide React |
+| Charts | Recharts |
+| Toasts | react-hot-toast |
+| Command Menu | CMDK |
 
 ---
 
-## 🧠 System Architecture & Data Flow
+## 🧠 System Architecture
 
-The application relies on a unidirectional data flow powered by Redux, ensuring predictable state mutations and seamless UI synchronization.
-
-```mermaid
-graph TD;
-    A[React Components] -->|Dispatch Actions| B(Redux Toolkit Store)
-    B -->|Update State| C{Slices}
-    C -->|KanbanSlice| D[Task/Board Data]
-    C -->|FocusSlice| E[Timer/Session Data]
-    B -->|Subscribe / Re-render| A
-    
-    D -.-> F[(LocalStorage Persistence)]
-    E -.-> F
+```
+┌─────────────────────────────────────────────────────────┐
+│                    React Frontend (Vite)                 │
+│                    localhost:5173                        │
+│                                                         │
+│  Redux Store          Axios Instance      Socket.io      │
+│  ┌──────────┐        ┌──────────────┐   ┌──────────┐   │
+│  │ authSlice│        │ /api proxy   │   │useSocket │   │
+│  │kanbanSlice│◄──────│ interceptors │   │  hook    │   │
+│  │focusSlice│        │ silent refresh│  └────┬─────┘   │
+│  └──────────┘        └──────┬───────┘        │         │
+└─────────────────────────────┼────────────────┼─────────┘
+                               │ REST           │ WS
+                    ┌──────────▼────────────────▼─────────┐
+                    │       Express Server                  │
+                    │       localhost:5000                  │
+                    │                                      │
+                    │  JWT Middleware → Controllers         │
+                    │  /api/auth   /api/projects           │
+                    │  /api/tasks  /api/users              │
+                    │  /api/analytics                      │
+                    │                   Socket.io Server   │
+                    │  Multer (uploads/) ← File Storage    │
+                    └──────────────────┬───────────────────┘
+                                       │ Mongoose
+                    ┌──────────────────▼───────────────────┐
+                    │          MongoDB                      │
+                    │    taskflow-pro database             │
+                    │                                      │
+                    │  users · workspaces · projects       │
+                    │  tasks · activitylogs                │
+                    └──────────────────────────────────────┘
 ```
 
-### State Management Strategy
-1. **Separation of Concerns**: State is split logically. `kanbanSlice` handles the complex entity relationships of columns and tasks, while `focusSlice` manages real-time timer state and historical analytics.
-2. **Global Timer**: The timer logic is decoupled from the `WorkspacePage` component. By placing the tick interval in the root `AppShell` and managing state in Redux, the timer remains active regardless of page navigation.
-3. **Optimistic Updates**: Task modifications and drag-and-drop actions update the UI immediately, providing a zero-latency feel characteristic of top-tier desktop applications.
+### Data Flow (State Management)
+
+```mermaid
+graph TD
+    A[UI Component] -->|dispatch thunk| B[kanbanThunks.js]
+    B -->|1. Optimistic update| C[Redux Store]
+    B -->|2. API call| D[Express REST API]
+    D -->|persist| E[(MongoDB)]
+    D -->|emit| F[Socket.io]
+    F -->|broadcast| G[Other browser tabs]
+    G -->|socketTask* action| C
+    C -->|re-render| A
+```
+
+### Server File Structure
+
+```
+server/
+├── server.js                    ← entry point: Express + Socket.io + routes
+├── package.json
+├── .env                         ← MONGO_URI, JWT secrets
+├── uploads/                     ← local file storage (gitignored)
+└── src/
+    ├── config/
+    │   ├── db.js                ← mongoose.connect()
+    │   └── socket.js            ← Socket.io init + JWT handshake middleware
+    ├── models/
+    │   ├── User.js              ← bcrypt pre-save hook, comparePassword()
+    │   ├── Workspace.js         ← auto-created on registration
+    │   ├── Project.js           ← columns array, members array
+    │   ├── Task.js              ← compound index on (project, columnId)
+    │   └── ActivityLog.js       ← audit trail for all task mutations
+    ├── middleware/
+    │   ├── auth.js              ← Bearer token → req.user
+    │   ├── errorHandler.js      ← global ApiError handler
+    │   └── upload.js            ← multer, 10MB, file type filter
+    ├── services/
+    │   └── token.service.js     ← generateAccessToken / generateRefreshToken / verify*
+    ├── controllers/
+    │   ├── auth.controller.js   ← register, login, refreshToken, logout
+    │   ├── project.controller.js
+    │   ├── task.controller.js   ← emits socket events on every write
+    │   ├── user.controller.js   ← profile + avatar upload
+    │   └── analytics.controller.js ← aggregation pipelines
+    └── routes/
+        ├── auth.routes.js
+        ├── project.routes.js
+        ├── task.routes.js       ← includes /activity/:projectId
+        ├── user.routes.js
+        └── analytics.routes.js
+```
 
 ---
 
-## 📸 Application Flow
+## 📡 API Reference
 
-### 1. Dashboard & Navigation
-> *Add a screenshot of the Dashboard here* `![Dashboard](docs/dashboard.png)`
-Users are greeted with a high-level overview of their active projects, tasks, and recent activity. The global Sidebar and Topbar remain persistent.
+### Auth
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/register` | — | Create account + default workspace |
+| POST | `/api/auth/login` | — | Returns `accessToken` + sets refresh cookie |
+| POST | `/api/auth/refresh-token` | Cookie | Silent access token refresh |
+| POST | `/api/auth/logout` | ✅ | Clears tokens |
 
-### 2. Task Management (Kanban)
-> *Add a screenshot of the Kanban Board here* `![Kanban Board](docs/kanban.png)`
-A highly interactive board. Users can create, edit, delete, and re-order tasks seamlessly. Tasks support visual tags, priorities, and dates.
+### Users
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/users/me` | ✅ | Get own profile |
+| PATCH | `/api/users/me` | ✅ | Update name, avatar, etc. |
+| POST | `/api/users/me/avatar` | ✅ | Upload avatar image |
 
-### 3. Deep Work (Workspace Timer)
-> *Add a screenshot of the Workspace here* `![Workspace Timer](docs/workspace.png)`
-A clean, distraction-free Pomodoro timer utilizing a custom animated SVG circular progress indicator.
+### Projects
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/projects` | ✅ | All user's projects |
+| POST | `/api/projects` | ✅ | Create project (auto-creates 4 columns) |
+| GET | `/api/projects/:id` | ✅ | Get single project |
+| PATCH | `/api/projects/:id` | ✅ | Update project |
+| DELETE | `/api/projects/:id` | ✅ | Delete project |
 
-### 4. Progress Tracking (Analytics)
-> *Add a screenshot of the Analytics here* `![Analytics Dashboard](docs/analytics.png)`
-Visualizes the user's focus sessions through a GitHub-style calendar heatmap, tracking current and best streaks to gamify productivity.
+### Tasks
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/tasks/project/:id` | ✅ | Get all tasks for a project |
+| POST | `/api/tasks/project/:id` | ✅ | Create task + log activity + emit socket |
+| PATCH | `/api/tasks/:id` | ✅ | Update task fields |
+| PATCH | `/api/tasks/:id/move` | ✅ | Move to new column (logs + emits) |
+| DELETE | `/api/tasks/:id` | ✅ | Delete task + emit socket |
+| POST | `/api/tasks/:id/attachments` | ✅ | Upload file attachment |
+| GET | `/api/tasks/activity/:projectId` | ✅ | Last 50 activity logs |
+
+### Analytics
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/analytics/:projectId/summary` | ✅ | Tasks by column, priority, assignee; activity time series; completion rate |
 
 ---
 
 ## 💻 Getting Started
 
-To run this project locally, follow these steps:
-
 ### Prerequisites
-Make sure you have [Node.js](https://nodejs.org/) installed (v16+ recommended).
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Node.js | 18+ | [nodejs.org](https://nodejs.org) |
+| MongoDB Community | 7.x | [mongodb.com](https://www.mongodb.com/try/download/community) |
+| npm | 9+ | Comes with Node |
 
 ### Installation
 
@@ -121,23 +274,99 @@ Make sure you have [Node.js](https://nodejs.org/) installed (v16+ recommended).
    cd taskflow-pro
    ```
 
-2. **Install dependencies**
+2. **Install frontend dependencies**
    ```bash
    npm install
    ```
 
-3. **Run the development server**
+3. **Install backend dependencies**
    ```bash
-   npm run dev
+   cd server
+   npm install
+   cd ..
    ```
 
-4. **Build for production**
-   ```bash
-   npm run build
+4. **Configure environment variables**
+
+   `server/.env` (already present — update secrets for production):
+   ```env
+   PORT=5000
+   MONGO_URI=mongodb://localhost:27017/taskflow-pro
+   JWT_SECRET=your_super_secret_jwt_key_change_this
+   JWT_REFRESH_SECRET=your_super_secret_refresh_key_change_this
+   NODE_ENV=development
+   CLIENT_ORIGIN=http://localhost:5173
    ```
+
+   `client/.env` (root `.env`):
+   ```env
+   VITE_API_URL=http://localhost:5000/api
+   ```
+
+### Running Locally
+
+> ⚠️ You need **three terminals** (or MongoDB running as a Windows service).
+
+**Terminal 1 — Start MongoDB** *(skip if MongoDB is already a service)*
+```powershell
+# Windows (run as Administrator)
+& "C:\Program Files\MongoDB\Server\7.0\bin\mongod.exe" --dbpath "C:\data\db"
+```
+
+**Terminal 2 — Start Express backend**
+```bash
+cd server
+npm run dev
+# → 🚀 Server running on http://localhost:5000
+```
+
+**Terminal 3 — Start React frontend**
+```bash
+npm run dev
+# → App running on http://localhost:5173
+```
+
+### Verify Everything Works
+1. Open http://localhost:5173 → register a new account
+2. Open **MongoDB Compass** → connect to `mongodb://localhost:27017` → check the `taskflow-pro` database has a `users` and `workspaces` collection
+3. Log in → create a project → create a task → verify it appears in the `tasks` collection
+4. Open **two browser tabs** → move a card in one → it should move in the other tab in real time (Socket.io ✅)
+
+---
+
+## 🗂 Frontend File Reference
+
+### New Files Added
+| File | Purpose |
+|------|---------|
+| `src/api/axiosInstance.js` | Central axios with auth header injection + silent 401 refresh |
+| `src/hooks/useSocket.js` | Connects to Socket.io, joins project room, dispatches Redux on events |
+
+### Updated Files
+| File | What Changed |
+|------|-------------|
+| `src/features/auth/authSlice.js` | Replaced Firebase stubs with `loginUser`, `registerUser`, `logoutUser` async thunks |
+| `src/features/kanban/kanbanSlice.js` | Added `fetchTasks`, `createTaskAPI`, `moveTaskAPI`, `deleteTaskAPI`, `updateTaskAPI`, `fetchProjects`, `createProjectAPI` + socket reducers (`socketTaskMoved/Created/Updated/Deleted`) + task normalizer helpers |
+| `src/features/kanban/kanbanThunks.js` | Optimistic UI now persists to API; delegates to slice thunks |
+| `vite.config.js` | Added `/api` → `http://localhost:5000` dev proxy |
+
+---
+
+## 🔌 Socket.io Real-Time Events
+
+| Event | Direction | Payload | Triggered By |
+|-------|-----------|---------|-------------|
+| `task:created` | Server → Clients | Full task object | POST `/api/tasks/project/:id` |
+| `task:moved` | Server → Clients | `{ taskId, toColumnId, toIndex }` | PATCH `/api/tasks/:id/move` |
+| `task:updated` | Server → Clients | Full task object | PATCH `/api/tasks/:id` |
+| `task:deleted` | Server → Clients | `{ taskId }` | DELETE `/api/tasks/:id` |
+
+Add `useSocket(currentProjectId)` to the KanbanBoard component to activate live sync.
 
 ---
 
 <div align="center">
-  <p>Built with ❤️ by an aspiring Frontend Engineer.</p>
+  <p>Built with ❤️ by Aditya — Full-Stack MERN · Real-Time · Production Architecture</p>
 </div>
+
+
